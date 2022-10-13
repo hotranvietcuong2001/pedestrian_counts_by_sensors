@@ -104,7 +104,7 @@ SPARK_STEPS = [
     },
     {
         "Name": "Run spark job: preprocess dataset",
-        "ActionOnFailure": "TERMINATE_JOB_FLOW",
+        "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
             "Args": [
