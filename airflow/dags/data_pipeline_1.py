@@ -103,7 +103,7 @@ SPARK_STEPS = [
         },
     },
     {
-        "Name": "Run spark job: preprocess dataset",
+        "Name": "Run spark job - preprocess dataset",
         "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
@@ -119,13 +119,13 @@ SPARK_STEPS = [
                 "--input_sensor_info",
                 "/data/raw/sensor_info.csv",
                 "--output_top_10_by_day",
-                "/data/cleaned/top_10_by_day",
+                "/data/cleaned/top_10_by_day/",
                 "--output_top_10_by_month",
-                "/data/cleaned/top_10_by_month",
+                "/data/cleaned/top_10_by_month/",
                 "--output_sensor_by_year",
-                "/data/cleaned/sensor_by_year",
+                "/data/cleaned/sensor_by_year/",
                 "--output_dim_sensor_info",
-                "/data/cleaned/dim_sensor_info"
+                "/data/cleaned/dim_sensor_info/"
             ],
         },
     },
