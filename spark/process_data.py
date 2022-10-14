@@ -44,7 +44,7 @@ def get_top_10_location_by_day(df):
   return df.groupBy(["Year", "Month", "Mdate", "Sensor_ID"]).sum("Hourly_Counts")\
             .select('*', F.rank().over(window).alias('rank')) \
             .filter(F.col('rank') <= 10) \
-            .withColumRenamed('sum(Hourly_Counts)', 'Hourly_Counts') \
+            .withColumnRenamed('sum(Hourly_Counts)', 'Hourly_Counts') \
             .drop('rank')
 
 
@@ -152,15 +152,15 @@ if __name__ == "__main__":
   # main functions
 
   top_10_location_by_day = get_top_10_location_by_day(pedestrian_counts_df)
-  top_10_location_by_day.write.parquet(output_top_10_by_day, mode='overwrite', header=True)
+  top_10_location_by_day.write.parquet(output_top_10_by_day, mode='overwrite')
 
   
-  top_10_location_by_month_2 = get_top_10_location_by_month(pedestrian_counts_df)
-  top_10_location_by_month_2.write.parquet(output_top_10_by_month, mode='overwrite', header=True)
+  top_10_location_by_month = get_top_10_location_by_month(pedestrian_counts_df)
+  top_10_location_by_month.write.parquet(output_top_10_by_month, mode='overwrite')
   
   
   sensor_by_year_df = get_sensor_by_year(pedestrian_counts_df)
-  sensor_by_year_df.write.parquet(output_sensor_by_year, mode='overwrite', header=True)
+  sensor_by_year_df.write.parquet(output_sensor_by_year, mode='overwrite')
   
   
   temp_df_1 = get_amount_decline_last_2_years(pedestrian_counts_df)
@@ -169,6 +169,6 @@ if __name__ == "__main__":
   temp_df_2 = get_amount_growth_last_years(pedestrian_counts_df)
   print('Location has most def get_amount_growth_last_years(df):', temp_df_2.collect()[0][0])
   
-  input_sensor_info.write.parquet(output_dim_sensor_info, mode='overwrite', header=True)
+  input_sensor_info.write.parquet(output_dim_sensor_info, mode='overwrite')
 
 
