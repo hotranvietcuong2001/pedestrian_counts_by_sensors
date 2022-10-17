@@ -144,10 +144,10 @@ if __name__ == "__main__":
 
   # Reading the csv files and creating dataframes.
   pedestrian_counts_df = spark.read.csv(input_pedestrian_counts, header=True, multiLine=True)
-  input_sensor_info = spark.read.csv(input_sensor_info, header=True, multiLine=True)
+  sensor_info_df = spark.read.csv(input_sensor_info, header=True, multiLine=True)
 
   # preprocess dataframe
-  pedestrian_counts_df, input_sensor_info = preprocess_data(pedestrian_counts_df, input_sensor_info)
+  pedestrian_counts_df, sensor_info_df = preprocess_data(pedestrian_counts_df, sensor_info_df)
 
   # main functions
 
@@ -169,6 +169,6 @@ if __name__ == "__main__":
   temp_df_2 = get_amount_growth_last_years(pedestrian_counts_df)
   print('Location has most def get_amount_growth_last_years(df):', temp_df_2.collect()[0][0])
   
-  input_sensor_info.write.parquet(output_dim_sensor_info, mode='overwrite')
+  sensor_info_df.write.parquet(output_dim_sensor_info, mode='overwrite')
 
 

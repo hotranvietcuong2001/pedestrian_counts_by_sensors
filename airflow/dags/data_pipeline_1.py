@@ -119,13 +119,13 @@ SPARK_STEPS = [
                 "--input_sensor_info",
                 "/data/raw/sensor_info.csv",
                 "--output_top_10_by_day",
-                "/data/cleaned/top_10_by_day/",
+                "/data/cleaned/top_10_by_day",
                 "--output_top_10_by_month",
-                "/data/cleaned/top_10_by_month/",
+                "/data/cleaned/top_10_by_month",
                 "--output_sensor_by_year",
-                "/data/cleaned/sensor_by_year/",
+                "/data/cleaned/sensor_by_year",
                 "--output_dim_sensor_info",
-                "/data/cleaned/dim_sensor_info/"
+                "/data/cleaned/dim_sensor_info"
             ],
         },
     },
@@ -143,55 +143,6 @@ SPARK_STEPS = [
     },
 ]
 
-# SPARK_STEPS = [
-#     {
-#         "Name": "Move raw data from S3 to HDFS Cluster",
-#         "ActionOnFailure": "TERMINATE_JOB_FLOW",
-#         "HadoopJarStep": {
-#             "Jar": "command-runner.jar",
-#             "Args": [
-#                 "s3-dist-cp",
-#                 "--src=s3://{{ params.BUCKET_NAME }}/data/raw",
-#                 "--dest=/data/raw",
-#             ],
-#         },
-#     },
-#     {
-#         "Name": "Run spark job: preprocess dataset",
-#         "ActionOnFailure": "TERMINATE_JOB_FLOW",
-#         "HadoopJarStep": {
-#             "Jar": "command-runner.jar",
-#             "Args": [
-#                 "spark-submit",
-#                 "--master", 
-#                 "yarn",
-#                 "--deploy-mode",
-#                 "cluster",
-#                 "s3://{{ params.BUCKET_NAME }}/spark_jobs/test.py",
-#                 "--input_covid_data",
-#                 "/data/raw/covid_cases.csv",
-#                 "--input_vaccination_data",
-#                 "/data/raw/vaccination.csv",
-#                 "--output_covid_data",
-#                 "/data/cleaned/covid_cases",
-#                 "--output_vaccination_data",
-#                 "/data/cleaned/vaccination"
-#             ],
-#         },
-#     },
-#     {
-#         "Name": "Move preprocessed data from HDFS to S3",
-#         "ActionOnFailure": "TERMINATE_JOB_FLOW",
-#         "HadoopJarStep": {
-#             "Jar": "command-runner.jar",
-#             "Args": [
-#                 "s3-dist-cp",
-#                 "--src=/data/cleaned",
-#                 "--dest=s3://{{ params.BUCKET_NAME }}/data/cleaned",
-#             ],
-#         },
-#     },
-# ]
 
 def upload_to_s3(bucket, target_name, local_file) -> None:
     s3_hook = S3Hook('cuonghtv_aws_conn')
@@ -298,30 +249,3 @@ with DAG(
     finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
 
 start_dp_pedestrian_sensor_daily >> ingest_data_and_create_cluster >> pyspark_in_emr >> finish_dp_pedestrian_sensor_daily
-    # with TaskGroup(group_id='s3_to_redshift') as s3_to_redshift:
-
-    #     covid_to_redshift = S3ToRedshiftOperator(
-    #         schema="PUBLIC",
-    #         s3_bucket=BUCKET_NAME,
-    #         s3_key="/data/cleaned}/covid_cases/*.parquet",
-    #         table="covid",
-    #         copy_options=['parquet'],        
-    #         aws_conn_id="cuonghtv_aws_conn",
-    #         redshift_conn_id="cuonghtv_redshift_conn219",
-    #         method="REPLACE",
-    #         task_id="covid_to_redshift",
-    #     )
-
-    #     vaccination_to_redshift = S3ToRedshiftOperator(
-    #         schema="PUBLIC",
-    #         s3_bucket=BUCKET_NAME,
-    #         s3_key="/data/cleaned}/vaccination/",
-    #         table="vaccination",
-    #         copy_options=['parquet'],        
-    #         aws_conn_id="cuonghtv_aws_conn",
-    #         redshift_conn_id="cuonghtv_redshift_conn",
-    #         method="REPLACE",
-    #         task_id="vaccination_to_redshift",
-    #     )
-
-
