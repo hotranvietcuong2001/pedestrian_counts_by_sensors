@@ -13,3 +13,5 @@ airflow/logs
 # raw data
 data/*
 
+# temp file
+temp.txt
