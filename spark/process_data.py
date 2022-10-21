@@ -159,7 +159,11 @@ if __name__ == "__main__":
                       .appName('Pedestrian Counts By Sensor') \
                       .getOrCreate()
 
+  spark.conf.set("spark.sql.sources.commitProtocolClass", "org.apache.spark.sql.execution.datasources.SQLHadoopMapReduceCommitProtocol")
+  spark.conf.set("parquet.enable.summary-metadata", "false")
+  spark.conf.set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false")
 
+ 
   # Reading the csv files and creating dataframes.
   pedestrian_counts_df = spark.read.csv(input_pedestrian_counts, header=True, multiLine=True)
   sensor_info_df = spark.read.csv(input_sensor_info, header=True, multiLine=True)

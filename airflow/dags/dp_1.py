@@ -19,10 +19,11 @@ from airflow.providers.amazon.aws.sensors.emr import (
     EmrStepSensor
 )
 
+from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.hooks.S3_hook import S3Hook
-
+from airflow.exceptions import AirflowSkipException
 
 from configurations.dp_1_configuration import (
     SPARK_STEPS,
@@ -36,11 +37,25 @@ FILES= {'pedestrian_counts': 'b2ak-trbp', 'sensor_info': 'h57g-5234'}
 
 BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
 
+def map_files_for_upload(filename:str):
+    if filename.rsplit(".", 1)[-1] in ("parquet"):
+        return filename
+    raise AirflowSkipException(f"Skip upload: {filename}")
+
+TABLES = {"fact_top_10_by_day":["date_time", "sensor_id", "daily_counts"] ,
+            "fact_top_10_by_month":["sensor_id", "monthly_counts", "date_time"],
+            "fact_sensor_by_year":["sensor_id", "counts_2020","counts_2021", "counts_2022"],
+            "dim_datetime":["date_time", "year","month", "date"],
+            "dim_sensor_info":["sensor_id", "sensor_description","sensor_name",
+                                "installation_date", "status", "note", "direction_1",
+                                "direction_2", "latitude", "longitude"]}
+
 copy_options = ["FORMAT AS PARQUET"]
 
 def upload_to_s3(bucket, target_name, local_file) -> None:
     s3_hook = S3Hook('cuonghtv_aws_conn')
     s3_hook.load_file(filename=local_file, key=target_name, bucket_name=bucket, replace=True)
+
 
 
 
@@ -149,84 +164,36 @@ with DAG(
         add_steps >> step_checker >> terminate_emr_cluster
 
     with TaskGroup(group_id='s3_to_redshift') as s3_to_redshift:
+        
         create_tables_on_redshift = PostgresOperator(
             task_id="create_tables_on_redshift",
             postgres_conn_id="cuonghtv_pg_redshift_conn",
             sql=CREATE_ALL_TABLES
         )
 
-        copy_fact_top_10_by_day = S3ToRedshiftOperator(
-            task_id="copy_fact_top_10_by_day",
-            schema="public",
-            table="fact_top_10_by_day",
-            column_list=[
-                "date_time", "sensor_id", "daily_counts"],
-            s3_bucket=BUCKET_NAME,
-            s3_key="data/cleaned/fact_top_10_by_day/",
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            copy_options=copy_options
-        )
+        for table_name, table_cols in TABLES.items():
 
-        copy_fact_top_10_by_month = S3ToRedshiftOperator(
-            task_id="copy_fact_top_10_by_month",
-            schema="public",
-            table="fact_top_10_by_month",
-            column_list=[
-                "sensor_id", "monthly_counts", "date_time"],
-            s3_bucket=BUCKET_NAME,
-            s3_key="data/cleaned/fact_top_10_by_month/",
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            copy_options=copy_options
-        )
+            list_files_S3 = S3ListOperator(
+                task_id=f"list_files_S3_{table_name}",
+                aws_conn_id="cuonghtv_aws_conn",
+                bucket=BUCKET_NAME,
+                prefix=f"data/cleaned/{table_name}/",
+                delimiter="/",
+            )
 
-        copy_fact_sensor_by_year = S3ToRedshiftOperator(
-            task_id="copy_fact_sensor_by_year",
-            schema="public",
-            table="fact_sensor_by_year",
-            column_list=[
-                "sensor_id", "counts_2020","counts_2021", "counts_2022"],
-            s3_bucket=BUCKET_NAME,
-            s3_key="data/cleaned/fact_sensor_by_year/",
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            copy_options=copy_options
-        )
+            copy_S3_to_Redshift = S3ToRedshiftOperator.partial(
+                task_id=f"copy_{table_name}_to_Redshift",
+                schema="public",
+                table=f"{table_name}",
+                column_list=table_cols,
+                s3_bucket=BUCKET_NAME,
+                redshift_conn_id="cuonghtv_redshift_conn",
+                aws_conn_id="cuonghtv_aws_conn",
+                method="REPLACE",
+                copy_options=copy_options
+            ).expand(s3_key=list_files_S3.output.map(map_files_for_upload))
 
-        copy_dim_datetime = S3ToRedshiftOperator(
-            task_id="copy_dim_datetime",
-            schema="public",
-            table="dim_datetime",
-            column_list=[
-                "date_time", "year","month", "date"],
-            s3_bucket=BUCKET_NAME,
-            s3_key="data/cleaned/dim_datetime/",
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            method="REPLACE",
-            copy_options=copy_options
-        )
-
-        copy_dim_sensor_info = S3ToRedshiftOperator(
-            task_id="copy_dim_sensor_info",
-            schema="public",
-            table="dim_sensor_info",
-            column_list=[
-                "sensor_id", "sensor_description","sensor_name",
-                "installation_date", "status", "note", "direction_1",
-                "direction_2", "latitude", "longitude"],
-            s3_bucket=BUCKET_NAME,
-            s3_key="data/cleaned/dim_sensor_info/",
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            copy_options=copy_options
-        )
-
-        create_tables_on_redshift >> [
-            copy_fact_top_10_by_day, copy_fact_top_10_by_month, 
-            copy_fact_sensor_by_year, copy_dim_datetime, copy_dim_sensor_info]
-
+            create_tables_on_redshift >> copy_S3_to_Redshift
 
     finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
 
