@@ -26,7 +26,8 @@ We have to answer some questions:
 - Containerization: Docker
 
 ## Architecture
-![image](https://user-images.githubusercontent.com/56772542/193206315-f38c82bf-bcd6-467d-afee-46bc32fef258.png)
+![pedestrian_counts drawio](https://user-images.githubusercontent.com/56772542/197559124-61f85b17-0c39-48c8-9c13-b6204cae1aed.png)
+
 
 ## Results
 The result will be divided into 4 csv files for easy querying later. Those 4 files include `top_10_by_day.csv`, `top_10_by_month.csv`, `sensor_by_year.csv`, `dim_sensor_info.csv`
