@@ -3,6 +3,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.functions import year, month, dayofmonth
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 import argparse
 
 
@@ -18,7 +19,7 @@ def preprocess_data(pedestrian_counts, sensor_df):
   """
 
   pedestrian_counts = pedestrian_counts \
-                        .withColumn("Date_Time", F.to_date(F.col("Date_Time"), 'MMMM dd, yyyy hh:mm:ss a')) \
+                        .withColumn("Date_Time", F.to_date(F.col("Date_Time"), "yyyy-MM-dd'T'k:mm:ss.000")) \
                         .withColumn('Hourly_Counts', F.col("Hourly_Counts").cast("Int")) \
                         .withColumn('id', F.col('ID')) \
                         .withColumn('date_time', F.col('Date_Time')) \
@@ -165,7 +166,21 @@ if __name__ == "__main__":
 
  
   # Reading the csv files and creating dataframes.
-  pedestrian_counts_df = spark.read.csv(input_pedestrian_counts, header=True, multiLine=True)
+  schema_pedestrian_counts = StructType([ \
+    StructField("id",StringType(),True), \
+    StructField("date_time",StringType(),True), \
+    StructField("year",StringType(),True), \
+    StructField("month", StringType(), True), \
+    StructField("mdate", StringType(), True), \
+    StructField("day", StringType(), True), \
+    StructField("time", StringType(), True), \
+    StructField("sensor_id", StringType(), True), \
+    StructField("sensor_name", StringType(), True), \
+    StructField("hourly_counts", StringType(), True)])
+  
+
+
+  pedestrian_counts_df = spark.read.schema(schema_pedestrian_counts).json(input_pedestrian_counts, multiLine=True)
   sensor_info_df = spark.read.csv(input_sensor_info, header=True, multiLine=True)
 
   # preprocess dataframe
