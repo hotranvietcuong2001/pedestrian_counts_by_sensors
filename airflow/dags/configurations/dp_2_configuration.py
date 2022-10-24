@@ -1,4 +1,4 @@
-
+# for testing
 BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
 
 
@@ -119,30 +119,19 @@ SPARK_STEPS = [
 # latitude, .. dang la INT
 
 CREATE_ALL_TABLES = """
+    
     DROP TABLE IF EXISTS fact_top_10_by_day, fact_top_10_by_month, fact_sensor_by_year,
                             dim_sensor_info, dim_datetime;
     
-    CREATE TABLE fact_top_10_by_day (
-        sensor_id               TEXT     PRIMARY KEY,
-        date_time               DATE,
-        daily_counts            BIGINT
-    );
-
-    CREATE TABLE fact_top_10_by_month (
-        sensor_id               TEXT     PRIMARY KEY,
-        date_time               DATE,
-        monthly_counts          BIGINT
-    );
-
-    CREATE TABLE fact_sensor_by_year (
-        sensor_id               TEXT     PRIMARY KEY,
-        counts_2020             BIGINT,
-        counts_2021             BIGINT,
-        counts_2022             BIGINT
+    CREATE TABLE dim_datetime (
+        date_time               DATE        PRIMARY KEY,
+        year                    INTEGER     NOT NULL,
+        month                   INTEGER     NOT NULL,
+        date                    INTEGER     NOT NULL
     );
 
     CREATE TABLE dim_sensor_info (
-        sensor_id               TEXT     PRIMARY KEY,
+        sensor_id               TEXT PRIMARY KEY,
         sensor_description      TEXT,
         sensor_name             TEXT,
         installation_date       TEXT,
@@ -151,13 +140,47 @@ CREATE_ALL_TABLES = """
         direction_1             TEXT,
         direction_2             TEXT,
         latitude                TEXT,
-        longitude               TEXT               
+        longitude               TEXT            
     );
 
-    CREATE TABLE dim_datetime (
-        date_time               DATE        PRIMARY KEY,
-        year                    INTEGER     NOT NULL,
-        month                   INTEGER     NOT NULL,
-        date                    INTEGER     NOT NULL
+    CREATE TABLE fact_top_10_by_day (
+        top_10_by_day_id        BIGINT GENERATED ALWAYS AS IDENTITY,
+        sensor_id               TEXT,
+        date_time               DATE,
+        daily_counts            BIGINT,
+        
+        CONSTRAINT fk_top_10_by_day_sensor_id
+            FOREIGN KEY(sensor_id)
+                REFERENCES dim_sensor_info(sensor_id),
+        CONSTRAINT fk_top_10_by_day_date_time
+            FOREIGN KEY(date_time)
+                REFERENCES dim_datetime(date_time)
+    );
+
+
+    CREATE TABLE fact_top_10_by_month (
+        top_10_by_month_id      BIGINT GENERATED ALWAYS AS IDENTITY,
+        sensor_id               TEXT,
+        date_time               DATE,
+        monthly_counts          BIGINT,
+
+        CONSTRAINT fk_top_10_by_month_sensor_id
+            FOREIGN KEY(sensor_id)
+                REFERENCES dim_sensor_info(sensor_id),
+        
+        CONSTRAINT fk_top_10_by_month_date_time
+            FOREIGN KEY(date_time)
+                REFERENCES dim_datetime(date_time)
+    );
+
+    CREATE TABLE fact_sensor_by_year (
+        sensor_id               TEXT,
+        counts_2020             BIGINT,
+        counts_2021             BIGINT,
+        counts_2022             BIGINT,
+
+        CONSTRAINT fk_sensor_by_year_sensor_id
+            FOREIGN KEY(sensor_id)
+                REFERENCES dim_sensor_info(sensor_id)
     );
 """

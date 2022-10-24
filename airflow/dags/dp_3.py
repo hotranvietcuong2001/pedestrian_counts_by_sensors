@@ -1,4 +1,4 @@
-
+# for testing
 import os
 from airflow import DAG
 from airflow.utils.dates import days_ago
@@ -29,7 +29,10 @@ from airflow.providers.amazon.aws.sensors.emr import (
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.hooks.S3_hook import S3Hook
 from operators.s3_to_redshift import S3ToRedshiftOperator
-
+from helpers.check_data_quality import (
+    non_empty_check,
+    unique_values_check,
+)
 from configurations.dp_2_configuration import (
     CREATE_ALL_TABLES
 )
@@ -74,36 +77,50 @@ with DAG(
     tags=['pedestrian_sensor'],
 ) as dag:
     # start_dp_pedestrian_sensor_daily = DummyOperator(task_id="start_dp_pedestrian_sensor_daily")
-    
-    create_tables_on_redshift = PostgresOperator(
-        task_id="create_tables_on_redshift",
-        postgres_conn_id="cuonghtv_pg_redshift_conn",
-        sql=CREATE_ALL_TABLES
-    )
-
-    for table_name, table_cols in TABLES.items():
-
-        list_files_S3 = S3ListOperator(
-            task_id=f"list_files_S3_{table_name}",
-            aws_conn_id="cuonghtv_aws_conn",
-            bucket=BUCKET_NAME,
-            prefix=f"data/cleaned/{table_name}/",
-            delimiter="/",
+    with TaskGroup(group_id='s3_to_redshift') as s3_to_redshift:
+        create_tables_on_redshift = PostgresOperator(
+            task_id="create_tables_on_redshift",
+            postgres_conn_id="cuonghtv_pg_redshift_conn",
+            sql=CREATE_ALL_TABLES
         )
 
-        copy_S3_to_Redshift = S3ToRedshiftOperator.partial(
-            task_id=f"copy_{table_name}_to_Redshift",
-            schema="public",
-            table=f"{table_name}",
-            column_list=table_cols,
-            s3_bucket=BUCKET_NAME,
-            redshift_conn_id="cuonghtv_redshift_conn",
-            aws_conn_id="cuonghtv_aws_conn",
-            method="REPLACE",
-            copy_options=copy_options
-        ).expand(s3_key=list_files_S3.output.map(map_files_for_upload))
+        start = DummyOperator(task_id="start")
+        end = DummyOperator(task_id="end")
 
-        create_tables_on_redshift >> copy_S3_to_Redshift
+        for table_name, table_cols in TABLES.items():
+            
+
+            list_files_S3 = S3ListOperator(
+                task_id=f"list_files_S3_{table_name}",
+                aws_conn_id="cuonghtv_aws_conn",
+                bucket=BUCKET_NAME,
+                prefix=f"data/cleaned/{table_name}/",
+                delimiter="/",
+            )
+
+            copy_S3_to_Redshift = S3ToRedshiftOperator.partial(
+                task_id=f"copy_{table_name}_to_Redshift",
+                schema="public",
+                table=f"{table_name}",
+                column_list=table_cols,
+                s3_bucket=BUCKET_NAME,
+                redshift_conn_id="cuonghtv_redshift_conn",
+                aws_conn_id="cuonghtv_aws_conn",
+                method="REPLACE",
+                copy_options=copy_options
+            ).expand(s3_key=list_files_S3.output.map(map_files_for_upload))
+
+            start >> create_tables_on_redshift >> copy_S3_to_Redshift >> end
+
+
+    # check_non_empty = PythonOperator(
+    #     task_id=f"check_non_empty",
+    #     python_callable=non_empty_check,
+    #     provide_context=True,
+    #     params={"postgres_conn_id": "cuonghtv_redshift_conn","tables": TABLES.keys()}
+    # )
+
+    s3_to_redshift
 
 
     # finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
