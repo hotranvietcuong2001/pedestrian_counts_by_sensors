@@ -23,7 +23,6 @@ from airflow.providers.amazon.aws.sensors.emr import (
 
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
-from airflow.providers.amazon.aws.operators.s3 import S3DeleteObjectsOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.hooks.S3_hook import S3Hook
 from airflow.exceptions import AirflowSkipException
@@ -93,24 +92,52 @@ default_args = {
 
 
 with DAG(
-    dag_id="data_pipeline_1",
+    dag_id="data_pipeline_2",
     schedule_interval="@once",
     default_args=default_args,
     catchup=False,
     max_active_runs=3,
-    tags=['pedestrian_sensor'],
+    tags=['pedestrian_sensor', "historical_data"],
 ) as dag:
     start_dp_pedestrian_sensor_daily = DummyOperator(task_id="start_dp_pedestrian_sensor_daily")
     
-    delete_old_data = S3DeleteObjectsOperator(
-        task_id="delete_old_data",
-        bucket=BUCKET_NAME,
-        keys='data/cleaned',
-        aws_conn_id="cuonghtv_aws_conn",
-    )
 
-    with TaskGroup(group_id='pyspark_in_emr') as pyspark_in_emr:
+    with TaskGroup(group_id='download_to_local_and_upload_to_S3') as ingest_data_to_s3:
 
+        start = DummyOperator(task_id="start")
+        end = DummyOperator(task_id="end")
+
+        for FTYPE, FNAME in FILES.items():
+
+            download_dataset_task = BashOperator(
+                task_id=f"download_{FTYPE}_dataset_task",
+                bash_command=f"curl -sS https://data.melbourne.vic.gov.au/api/views/{FNAME}/rows.csv?accessType=DOWNLOAD > {path_to_local_home}/{FTYPE}.csv"
+            )
+
+            
+            upload_to_s3_task = PythonOperator(
+                task_id=f"{FTYPE}_upload_to_s3_task",
+                python_callable=upload_to_s3,
+                op_kwargs={
+                    "bucket": BUCKET_NAME,
+                    "target_name": f"data/raw/{FTYPE}.csv",
+                    "local_file": f"{path_to_local_home}/{FTYPE}.csv",
+                },
+            )
+
+            delete_dataset_task = BashOperator(
+                task_id=f"delete_local_{FTYPE}_dataset_task",
+                bash_command=f"rm {path_to_local_home}/{FTYPE}.csv"
+            )
+
+            start >> download_dataset_task >> upload_to_s3_task >> delete_dataset_task >> end
+    
+    
+
+    with TaskGroup(group_id='ingest_data_and_create_cluster') as ingest_data_and_create_cluster:
+        
+        start = DummyOperator(task_id="start")
+        
         create_emr_cluster = EmrCreateJobFlowOperator(
             task_id="create_emr_cluster",
             job_flow_overrides=JOB_FLOW_OVERRIDES,
@@ -124,6 +151,14 @@ with DAG(
             aws_conn_id="cuonghtv_aws_conn",
             target_states=['RUNNING', 'WAITING']
         )
+
+        end = DummyOperator(task_id="end")
+
+        start >> ingest_data_to_s3 >> end
+        start >> create_emr_cluster >> check_create_job_flow >> end
+    
+
+    with TaskGroup(group_id='pyspark_in_emr') as pyspark_in_emr:
 
         add_steps = EmrAddStepsOperator(
             task_id="add_steps",
@@ -149,12 +184,13 @@ with DAG(
             aws_conn_id="cuonghtv_aws_conn",
         )
         
-        create_emr_cluster >> check_create_job_flow >> add_steps >> \
-            step_checker >> terminate_emr_cluster
+        add_steps >> step_checker >> terminate_emr_cluster
 
 
     with TaskGroup(group_id='s3_to_redshift') as s3_to_redshift:
         
+        
+
         create_tables_on_redshift = PostgresOperator(
             task_id="create_tables_on_redshift",
             postgres_conn_id="cuonghtv_pg_redshift_conn",
@@ -184,9 +220,8 @@ with DAG(
             ).expand(s3_key=list_files_S3.output.map(map_files_for_upload))
 
             create_tables_on_redshift >> copy_S3_to_Redshift
-
     finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
 
 
-start_dp_pedestrian_sensor_daily >> delete_old_data >> pyspark_in_emr >> \
-    s3_to_redshift >> finish_dp_pedestrian_sensor_daily
+start_dp_pedestrian_sensor_daily >> ingest_data_and_create_cluster \
+    >> pyspark_in_emr >> s3_to_redshift >> finish_dp_pedestrian_sensor_daily

@@ -74,7 +74,7 @@ with DAG(
     default_args=default_args,
     catchup=False,
     max_active_runs=3,
-    tags=['pedestrian_sensor'],
+    tags=['pedestrian_sensor', "testing"],
 ) as dag:
     # start_dp_pedestrian_sensor_daily = DummyOperator(task_id="start_dp_pedestrian_sensor_daily")
     with TaskGroup(group_id='s3_to_redshift') as s3_to_redshift:
