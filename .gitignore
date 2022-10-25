@@ -1,11 +1,11 @@
 __pycache__
 
 # terraform
-terraform/.terraform
-terraform/terraform.tfstate
-terraform/.terraform.lock.hcl
-terraform/terraform.tfstate.backup
-
+.terraform
+terraform.tfstate
+.terraform.lock.hcl
+terraform.tfstate.backup
+.terraform.tfstate.lock.info
 # airflow
 airflow/logs
 #airflow/.env
