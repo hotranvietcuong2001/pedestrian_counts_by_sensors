@@ -26,8 +26,7 @@ We have to answer some questions:
 - Containerization: Docker
 
 ## Architecture
-![pedestrian_counts drawio](https://user-images.githubusercontent.com/56772542/197561872-31d3fd1c-f7cd-4341-bf1a-de95174be3ce.png)
-
+![pedestrian_counts drawio](https://user-images.githubusercontent.com/56772542/197745638-017cc916-a6c3-492f-b9b2-988eabfd9c84.png)
 
 
 ## Results
