@@ -16,32 +16,26 @@ variable "aws_config" {
 variable "bucket_name" {
 	type        = string
 	description = "Creates a unique bucket name."
-	default     = "vc_pedestrian_sensor_s3_bucket"
+	default     = "vc-pedestrian-sensor-s3bucket"
 }
 
 variable "redshift_cluster_identifier" {
 	type        = string
 	description = "Creates a unique Redshift cluster name"
-	default     = "vc_pedestrian_sensor_redshift_cluster"
+	default     = "vc-pedestrian-sensor-redshift-cluster"
 }
 
 
 variable "kinesis_stream_name" {
 	type        = string
 	description = "Creates a unique Kinesis Stream name"
-	default     = "vc_pedestrian_sensor_kinesis_stream"
+	default     = "vc-pedestrian-sensor-kinesis-stream"
 }
 
 variable "lambda_function_name" {
 	type        = string
 	description = "Creates a unique Lambda Function name for Trigger Data Streaming"
-	default     = "vc_pedestrian_sensor_lambda_function"
-}
-
-variable "lambda_function_path" {
-	type        = string
-	description = "Path of Lambda Function"
-	default     = "../../streaming_data/streaming_data_kinesis.py"
+	default     = "vc-pedestrian-sensor-lambda-function"
 }
 
 

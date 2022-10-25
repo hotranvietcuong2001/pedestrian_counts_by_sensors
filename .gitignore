@@ -12,6 +12,8 @@ airflow/logs
 
 # raw data
 data/*
+*.zip
 
 # temp file
 temp.txt
+
