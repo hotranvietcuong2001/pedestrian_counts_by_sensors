@@ -56,4 +56,45 @@ The detailed description of the tables is given below:
 ### dim_datetime
 ![image](https://user-images.githubusercontent.com/56772542/198072177-e070672f-73a4-4598-9b85-59029fe75a12.png)
 
+## Setup Guide
+
+### Airflow Connection
+```
+Connection Id: cuonghtv_aws_conn
+Connection Type: Amazone Web Services
+AWS Access Key ID: <YOUR AWS ACCESS KEY ID>
+AWS Secret Access Key: <YOUR SECRET AWS ACCESS KEY ID>
+Extra: {"region_name": "us-east-2", "aws_iam_role": "arn:aws:iam::666243375423:role/DataCamp_Redshift_S3_role"}
+
+```
+
+```
+Connection Id: cuonghtv_emr_conn
+Connection Type: Amazone Web Services
+AWS Access Key ID: <YOUR AWS ACCESS KEY ID>
+AWS Secret Access Key: <YOUR SECRET AWS ACCESS KEY ID>
+
+```
+
+```
+Connection Id: cuonghtv_pg_redshift_conn
+Connection Type: Posgres
+HOST: <YOUR REDSHIFT ENDPOINT>
+Schema: dev
+Login: cuonghtv
+Password: Redshift2022^^
+Port: 549
+
+```
+
+```
+Connection Id: cuonghtv_redshift_conn
+Connection Type: Amazon Redshift
+HOST: <YOUR REDSHIFT ENDPOINT>
+Schema: dev
+Login: cuonghtv
+Password: Redshift2022^^
+Port: 549
+
+```
 
