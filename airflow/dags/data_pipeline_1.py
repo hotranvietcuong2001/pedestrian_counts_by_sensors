@@ -45,7 +45,7 @@ from configurations.dp_1_configuration import (
 path_to_local_home = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
 
 # S3 bucket's name
-BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
+BUCKET_NAME = 'vc-pedestrian-sensor-s3bucket'
 
 # tables on Redshift and columns of it
 TABLES = {"fact_top_10_by_day":["date_time", "sensor_id", "daily_counts"] ,
@@ -140,7 +140,7 @@ with DAG(
 
         check_available_redshift = RedshiftClusterSensor(
             task_id = "check_available_redshift",
-            cluster_identifier = "vc-pedestrian-sensor",
+            cluster_identifier = "vc-pedestrian-sensor-redshift-cluster",
             target_status = "available",
             aws_conn_id='cuonghtv_aws_conn'
         )

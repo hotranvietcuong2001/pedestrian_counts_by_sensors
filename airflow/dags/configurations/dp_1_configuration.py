@@ -1,5 +1,5 @@
 
-BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
+BUCKET_NAME = 'vc-pedestrian-sensor-s3bucket'
 
 
 JOB_FLOW_OVERRIDES = {

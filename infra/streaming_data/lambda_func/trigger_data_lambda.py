@@ -3,7 +3,7 @@ import boto3
 import base64
 from datetime import datetime
 
-BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
+BUCKET_NAME = 'vc-pedestrian-sensor-s3bucket'
 
 def lambda_handler(event, context):
     # TODO implement

@@ -8,7 +8,7 @@ import boto3
 kinesis_client = boto3.client('kinesis')
 KINESIS_RETRY_COUNT = 10
 KINESIS_RETRY_WAIT_IN_SEC = 0.1
-KINESIS_STREAM_NAME = "vc-pedestrian-counts-stream"
+KINESIS_STREAM_NAME = "vc-pedestrian-sensor-kinesis-stream"
 
 
 """Call API to get number of rows"""

@@ -55,7 +55,7 @@ path_to_local_home = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
 FILES= {'pedestrian_counts': 'b2ak-trbp', 'sensor_info': 'h57g-5234'}
 
 # S3 bucket's name
-BUCKET_NAME = 'vc-s3bucket-pedestrian-sensor'
+BUCKET_NAME = 'vc-pedestrian-sensor-s3bucket'
 
 # tables on Redshift and columns of it
 TABLES = {"fact_top_10_by_day":["date_time", "sensor_id", "daily_counts"] ,
