@@ -188,10 +188,11 @@ if __name__ == "__main__":
 
 
   dim_datetime = pedestrian_counts_df.dropDuplicates(['date_time']) \
-                                    .select(F.col('date_time'),
-                                            year("date_time").alias('year'),
-                                            month("date_time").alias('month'),
-                                            dayofmonth("date_time").alias('date'))
+                                      .na.drop() \
+                                      .select(F.col('date_time'),
+                                              year("date_time").alias('year'),
+                                              month("date_time").alias('month'),
+                                              dayofmonth("date_time").alias('date'))
   
   # main functions
 
