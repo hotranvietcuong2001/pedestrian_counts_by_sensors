@@ -6,7 +6,7 @@ Data is collected from [City of Melbourne](https://data.melbourne.vic.gov.au/Tra
 We have two datasets. `Pedestrian Counting System - Monthly (counts per hour)` dataset contains hourly pedestrian counts since 2009 from pedestrian sensor devices located across the city. The data is updated on a monthly basis and can be used to determine variations in pedestrian activity throughout the day.
 `Pedestrian Counting System - Sensor Locations` contains status, location and directional information for each pedestrian sensor device installed throughout the city. The sensor_id column can be used to merge the data with related datasets.
 
-Data is saved in two file `pedestrian_counts.csv`, `sensor_info.csv`
+Data is saved in two folders `pedestrian_counts`, `sensor_info`
 
 ## Questions
 
@@ -24,28 +24,36 @@ We have to answer some questions:
 - Data Transformation: Spark (PySpark) run on AWS EMR
 - Workflow Orchestration: Airflow
 - Containerization: Docker
+- Streaming Data: Kinesis
 
 ## Architecture
 ![pedestrian_counts drawio](https://user-images.githubusercontent.com/56772542/197745638-017cc916-a6c3-492f-b9b2-988eabfd9c84.png)
 
 
 ## Results
-The result will be divided into 4 csv files for easy querying later. Those 4 files include `top_10_by_day.csv`, `top_10_by_month.csv`, `sensor_by_year.csv`, `dim_sensor_info.csv`
+The result will be divided into 5 tables for easy querying later. 
+
+- Fact Table: `fact_top_10_by_day`, `fact_top_10_by_month`, `fact_sensor_by_year`
+- Dim Table: `dim_sensor_info`, `dim_datetime`
 
 The detailed description of the tables is given below:
-### top_10_by_day
-![image](https://user-images.githubusercontent.com/56772542/193217025-8c1f24c0-8315-4c5e-a68f-6ec74a58f310.png)
+### fact_top_10_by_day
+![image](https://user-images.githubusercontent.com/56772542/198072885-97d78608-843a-459f-9ab3-407da9b8f7cd.png)
 
-### top_10_by_month
-![image](https://user-images.githubusercontent.com/56772542/193217391-9deb2d37-3d2f-4b98-b9a0-f79fb528eacb.png)
 
-### sensor_by_year
-![image](https://user-images.githubusercontent.com/56772542/193218372-8ccd3958-3065-4f39-b641-8a03a7c1485e.png)
+### fact_top_10_by_month
+![image](https://user-images.githubusercontent.com/56772542/198072970-34a9b02a-dd74-4ca1-aa66-0eb3f34aaf96.png)
+
+
+### fact_sensor_by_year
+![image](https://user-images.githubusercontent.com/56772542/198073117-196ac05d-0f82-4e0b-8922-3633c461ac67.png)
+
 
 ### dim_sensor_info
-![image](https://user-images.githubusercontent.com/56772542/193218470-32723cac-8cfd-4b0f-ab79-a7185bda6a94.png)
+![image](https://user-images.githubusercontent.com/56772542/198072671-ce08c2dd-8d5c-4f57-b1db-8159417a9630.png)
 
 
+### dim_datetime
+![image](https://user-images.githubusercontent.com/56772542/198072177-e070672f-73a4-4598-9b85-59029fe75a12.png)
 
 
-## Setup Guides
