@@ -1,6 +1,6 @@
-# from operators.s3_to_redshift import S3ToRedshiftOperator
 
+from operators.s3 import S3DeleteObjectsOperator
 
-# __all__ = [
-#     S3ToRedshiftOperator,
-# ]
+__all__ = [
+    'S3DeleteObjectsOperator',
+]

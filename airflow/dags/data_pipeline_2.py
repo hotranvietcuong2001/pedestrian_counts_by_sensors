@@ -1,5 +1,5 @@
 
-# import library
+"""Import"""
 import os
 from airflow import DAG
 
@@ -24,11 +24,22 @@ from airflow.providers.amazon.aws.sensors.emr import (
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.operators.postgres_operator import PostgresOperator
-from airflow.hooks.S3_hook import S3Hook
-from airflow.exceptions import AirflowSkipException
 
+from operators.s3 import (
+    S3DeleteObjectsOperator
+)
 
-# All about configurations for creating cluster EMR, running spark job and creating table on redshift
+from helpers.redshift import (
+    map_files_for_upload,
+)
+
+from helpers.s3 import (
+    upload_to_s3,
+)
+
+"""All about configurations"""
+
+# for creating cluster EMR, running spark job and creating table on redshift
 from configurations.dp_1_configuration import (
     SPARK_STEPS,
     JOB_FLOW_OVERRIDES,
@@ -57,30 +68,6 @@ TABLES = {"fact_top_10_by_day":["date_time", "sensor_id", "daily_counts"] ,
 copy_options = ["FORMAT AS PARQUET"]
 
 
-def upload_to_s3(bucket, target_name, local_file) -> None:
-    """
-    Upload a file to S3
-    
-    :param bucket: the name of the bucket you want to upload to
-    :param target_name: The name of the file in S3
-    :param local_file: the local file path to the file you want to upload
-    """
-    s3_hook = S3Hook('cuonghtv_aws_conn')
-    s3_hook.load_file(filename=local_file, key=target_name, bucket_name=bucket, replace=True)
-
-
-def map_files_for_upload(filename:str):
-    """
-    If the file extension is parquet, return the filename, otherwise skip the upload
-    Using this function for dynamic task on Airflow
-    :param filename: the name of the file to be uploaded
-    :type filename: str
-    :return: The filename is being returned if the file extension is parquet.
-    """
-    if filename.rsplit(".", 1)[-1] in ("parquet"):
-        return filename
-    raise AirflowSkipException(f"Skip upload: {filename}")
-
 
 
 default_args = {
@@ -101,6 +88,12 @@ with DAG(
 ) as dag:
     start_dp_pedestrian_sensor_daily = DummyOperator(task_id="start_dp_pedestrian_sensor_daily")
     
+    delete_old_file_S3 = S3DeleteObjectsOperator(
+        task_id="delete_old_file_S3",
+        aws_conn_id="cuonghtv_aws_conn",
+        bucket=BUCKET_NAME,
+        prefix=f"data/cleaned/",
+    )
 
     with TaskGroup(group_id='download_to_local_and_upload_to_S3') as ingest_data_to_s3:
 
@@ -122,6 +115,7 @@ with DAG(
                     "bucket": BUCKET_NAME,
                     "target_name": f"data/raw/{FTYPE}.csv",
                     "local_file": f"{path_to_local_home}/{FTYPE}.csv",
+                    "aws_conn_id": "cuonghtv_aws_conn"
                 },
             )
 
@@ -223,5 +217,5 @@ with DAG(
     finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
 
 
-start_dp_pedestrian_sensor_daily >> ingest_data_and_create_cluster \
+start_dp_pedestrian_sensor_daily >> ingest_data_and_create_cluster >> delete_old_file_S3 \
     >> pyspark_in_emr >> s3_to_redshift >> finish_dp_pedestrian_sensor_daily
