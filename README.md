@@ -6,7 +6,7 @@ Data is collected from [City of Melbourne](https://data.melbourne.vic.gov.au/Tra
 We have two datasets. `Pedestrian Counting System - Monthly (counts per hour)` dataset contains hourly pedestrian counts since 2009 from pedestrian sensor devices located across the city. The data is updated on a monthly basis and can be used to determine variations in pedestrian activity throughout the day.
 `Pedestrian Counting System - Sensor Locations` contains status, location and directional information for each pedestrian sensor device installed throughout the city. The sensor_id column can be used to merge the data with related datasets.
 
-Data is saved in two file `pedestrian_counts.csv`, `sensor_info.csv`
+Data is saved in two folders `pedestrian_counts`, `sensor_info`
 
 ## Questions
 
@@ -34,7 +34,7 @@ We have to answer some questions:
 The result will be divided into 5 tables for easy querying later. 
 
 - Fact Table: `fact_top_10_by_day`, `fact_top_10_by_month`, `fact_sensor_by_year`
-- Dim Table: `dim_sensor_info, dim_datetime`
+- Dim Table: `dim_sensor_info`, `dim_datetime`
 
 The detailed description of the tables is given below:
 ### fact_top_10_by_day
