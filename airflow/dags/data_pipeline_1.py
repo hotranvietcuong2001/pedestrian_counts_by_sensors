@@ -19,6 +19,8 @@ from airflow.providers.amazon.aws.sensors.emr import (
     EmrStepSensor
 )
 
+from airflow.providers.amazon.aws.sensors.redshift_cluster import RedshiftClusterSensor
+
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.operators.postgres_operator import PostgresOperator
@@ -28,9 +30,7 @@ from operators.s3 import (
     S3DeleteObjectsOperator
 )
 
-from helpers.redshift import (
-    map_files_for_upload,
-)
+from helpers.redshift import map_files_for_upload
 
 """All about configurations"""
 
@@ -138,6 +138,13 @@ with DAG(
             sql=CREATE_ALL_TABLES
         )
 
+        check_available_redshift = RedshiftClusterSensor(
+            task_id = "check_available_redshift",
+            cluster_identifier = "vc-pedestrian-sensor",
+            target_status = "available",
+            aws_conn_id='cuonghtv_aws_conn'
+        )
+
         for table_name, table_cols in TABLES.items():
 
             list_files_S3 = S3ListOperator(
@@ -160,7 +167,7 @@ with DAG(
                 copy_options=copy_options
             ).expand(s3_key=list_files_S3.output.map(map_files_for_upload))
 
-            create_tables_on_redshift >> copy_S3_to_Redshift
+            create_tables_on_redshift >> check_available_redshift >> copy_S3_to_Redshift
 
     finish_dp_pedestrian_sensor_daily = DummyOperator(task_id="finish_dp_pedestrian_sensor_daily")
 
